@@ -1,30 +1,30 @@
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
-import React, { useState } from 'react'
+import React from 'react'
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth"
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { Formik } from 'formik'
+import * as yup from 'yup'
+import { StackActions } from '@react-navigation/native';
 
 
 const Login = ({ navigation }) => {
-    const [email, setEmail] = useState("")
-    const [password, setPassword] = useState("")
-    const [message, setMessage] = useState("")
 
-    const handleLogin = async () => {
+    const validationSchema = yup.object().shape({
+        email: yup.string().email("Email tidak valid").required("Email wajib diisi"),
+        password: yup.string().min(6, "Password minimal harus 6 karakter").required("Password wajib diisi")
+    })
+
+    const handleLogin = async (formValues) => {
         try {
+            await validationSchema.validate(formValues, { abortEarly: false })
             const auth = getAuth()
-            const isUserCreated = await signInWithEmailAndPassword(auth, email, password)
-            console.log(isUserCreated)
-            navigation.navigate('Home', {
-                email: isUserCreated.user.email,
-                uid: isUserCreated.user.uid,
+            await signInWithEmailAndPassword(auth, formValues.email, formValues.password)
+            navigation.dispatch({
+                ...StackActions.replace('Home')
             })
-
-            setMessage(Alert.alert("Success", "Login succesfully."));
-
-            setPassword("")
-            setEmail("")
         } catch (error) {
-            setMessage(Alert.alert("Failed", "Login failed. Make sure the email and password are correct"));
+            // Alert.alert("Failed", "Login failed. Make sure the email and password are correct")
+            console.log("Gagal");
         }
     }
 
@@ -32,32 +32,57 @@ const Login = ({ navigation }) => {
         <SafeAreaView>
             <View className="container px-4 flex h-full w-full justify-center">
                 <Text className="my-2 font-bold text-[20px] text-slate-700 text-center">Metahub</Text>
-                <TextInput
-                    className="bg-white border border-slate-700 p-3 rounded text-slate-600 mb-2"
-                    placeholder='Enter Your Email'
-                    value={email}
-                    onChangeText={(value) => setEmail(value)}
-                />
-                <TextInput
-                    className="bg-white border border-slate-700 p-3 rounded text-slate-600 mb-2"
-                    placeholder='Enter Your Password'
-                    value={password}
-                    onChangeText={(value) => setPassword(value)}
-                    secureTextEntry={true}
-                />
+                <Formik
+                    initialValues={{ email: '', password: '' }}
+                    validationSchema={validationSchema}
+                    onSubmit={(values, { resetForm }) => {
+                        handleLogin(values)
+                        resetForm()
+                    }}
+                >
+                    {({ handleSubmit, handleChange, handleBlur, values, errors, touched }) => (
+                        <View>
+                            <TextInput
+                                className="bg-white border border-slate-700 p-3 rounded text-slate-600 mb-2"
+                                placeholder='Enter Your Email'
+                                value={values.email}
+                                onChangeText={handleChange('email')}
+                                onBlur={handleBlur('email')}
+                                name="email"
+                            />
+                            {touched.email && errors.email && (
+                                <Text className="text-red-500 mb-2 mt-0 text-[12px]">{errors.email}</Text>
+                            )}
+
+                            <TextInput
+                                className="bg-white border border-slate-700 p-3 rounded text-slate-600 mb-2"
+                                placeholder='Enter Your Password'
+                                value={values.password}
+                                onChangeText={handleChange('password')}
+                                onBlur={handleBlur('password')}
+                                secureTextEntry={true}
+                                name="password"
+                            />
+                            {touched.password && errors.password && (
+                                <Text className="text-red-500 mb-2 mt-0 text-[12px]">{errors.password}</Text>
+                            )}
 
 
-                <TouchableOpacity className="bg-sky-700 rounded p-4 mt-2" onPress={() => handleLogin()}>
-                    <Text className="text-white text-center font-bold">Login</Text>
-                </TouchableOpacity>
+                            <TouchableOpacity className="bg-sky-700 rounded p-4 mt-2" onPress={handleSubmit}>
+                                <Text className="text-white text-center font-bold">Login</Text>
+                            </TouchableOpacity>
 
 
-                <View className="flex flex-nowrap flex-row justify-center my-2">
-                    <Text>Don't have an account? </Text>
-                    <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                        <Text className="text-blue-500">Register</Text>
-                    </TouchableOpacity>
-                </View>
+                            <View className="flex flex-nowrap flex-row justify-center my-2">
+                                <Text>Don't have an account? </Text>
+                                <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                                    <Text className="text-blue-500">Register</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    )}
+
+                </Formik>
             </View>
         </SafeAreaView>
     )

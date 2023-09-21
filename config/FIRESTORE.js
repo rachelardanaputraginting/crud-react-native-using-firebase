@@ -1,6 +1,7 @@
 // import { getDatabase} from 'firebase/database';
-import { initializeApp } from "firebase/app";
+import { initializeApp, getReactNativePersistence  } from "firebase/app";
 import { getAuth } from "firebase/auth";
+
 
 const firebaseConfig = {
     apiKey: "AIzaSyDFsX8J8D011iJf_CHmLL74oPCdIKLfT9M",

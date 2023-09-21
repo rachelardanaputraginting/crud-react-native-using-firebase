@@ -1,5 +1,5 @@
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
-import React, { useState } from 'react'
+import React from 'react'
 import { createUserWithEmailAndPassword, getAuth } from "firebase/auth"
 import { SafeAreaView } from 'react-native-safe-area-context'
 import auth from '../../config/FIRESTORE'
@@ -7,12 +7,6 @@ import * as yup from 'yup'
 import { Formik } from 'formik'
 
 const Register = ({ navigation }) => {
-    const [formValue, setFormValues] = useState({
-        email: "",
-        password: ""
-    })
-
-
     const validationSchema = yup.object().shape({
         email: yup.string().email("Email tidak valid").required("Email wajib diisi"),
         password: yup.string().min(6, "Password minimal harus 6 karakter").required("Password wajib diisi")
