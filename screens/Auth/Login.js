@@ -1,10 +1,10 @@
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth"
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Formik } from 'formik'
 import * as yup from 'yup'
-import { StackActions } from '@react-navigation/native';
+import { StackActions } from '@react-navigation/native'
 
 
 const Login = ({ navigation }) => {
@@ -18,13 +18,25 @@ const Login = ({ navigation }) => {
         try {
             await validationSchema.validate(formValues, { abortEarly: false })
             const auth = getAuth()
-            await signInWithEmailAndPassword(auth, formValues.email, formValues.password)
-            navigation.dispatch({
-                ...StackActions.replace('Home')
-            })
+            const userCredential = await signInWithEmailAndPassword(auth, formValues.email, formValues.password)
+            if (userCredential) {
+                // Check if the user's email is verified
+                const user = userCredential.user;
+                if (user.emailVerified) {
+                    // Email is verified, navigate to the Home screen
+                    Alert.alert("Verified", "Your email verified!")
+                    navigation.dispatch(StackActions.replace('Home'));
+                } else {
+                    // Email is not verified, display an alert
+                    sendEmailVerification(auth.currentUser).then(() => {
+                        Alert.alert("Verify", "Please verify your email!")
+                        navigation.dispatch(StackActions.replace('Login'));
+                    })
+                    await signOut(auth)
+                }
+            }
         } catch (error) {
-            // Alert.alert("Failed", "Login failed. Make sure the email and password are correct")
-            console.log("Gagal");
+            Alert.alert("Failed", "Login failed. Make sure the email and password are correct")
         }
     }
 

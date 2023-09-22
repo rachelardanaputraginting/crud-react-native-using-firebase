@@ -6,21 +6,17 @@ import { StackActions } from '@react-navigation/native';
 
 export default function SplashScreen({ navigation }) {
 
-    const [isUserLogin, setIsUserLogin] = useState(false)
-
-    const auth = getAuth()
-    onAuthStateChanged(auth, (user) => {
-        if (user !== null) {
-            setIsUserLogin(true)
-        }
-    })
-
     useEffect(() => {
         setTimeout(() => {
-            const routeName = isUserLogin ? 'Home' : 'Login'
-            navigation.dispatch({
-                ...StackActions.replace(routeName)
+            const auth = getAuth()
+            onAuthStateChanged(auth, (user) => {
+                const routeName = user !== null ? 'Home' : 'Login'
+                navigation.dispatch({
+                    ...StackActions.replace(routeName)
+                })
             })
+
+            // unsubscribe();
             // navigation.navigate(routeName)
         }, 3000)
     }, [])

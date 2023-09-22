@@ -1,10 +1,12 @@
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import React from 'react'
-import { createUserWithEmailAndPassword, getAuth } from "firebase/auth"
+import { createUserWithEmailAndPassword, getAuth, signOut, sendEmailVerification } from "firebase/auth"
 import { SafeAreaView } from 'react-native-safe-area-context'
-import auth from '../../config/FIRESTORE'
+import db from '../../config/FIRESTORE'
+import { doc, setDoc } from "firebase/firestore";
 import * as yup from 'yup'
 import { Formik } from 'formik'
+
 
 const Register = ({ navigation }) => {
     const validationSchema = yup.object().shape({
@@ -16,7 +18,22 @@ const Register = ({ navigation }) => {
         try {
             await validationSchema.validate(formValues, { abortEarly: false })
             const authInstance = getAuth()
-            await createUserWithEmailAndPassword(authInstance, formValues.email, formValues.password)
+            const response = await createUserWithEmailAndPassword(authInstance, formValues.email, formValues.password)
+            const docId = response.user.uid;
+            const newCityRef = doc(db, "users", docId);
+            await setDoc(newCityRef, {
+                name: formValues.name,
+                email: formValues.email,
+            });
+
+            const auth = getAuth()
+            sendEmailVerification(auth.currentUser).then(() => {
+                Alert.alert("Verify", "Please verify your email!")
+            })
+            // console.log('user created')
+            await signOut(auth)
+
+
             navigation.navigate('Login')
         } catch (error) {
             console.log('Error during registration:', error)
@@ -29,7 +46,7 @@ const Register = ({ navigation }) => {
             <View className="container px-4 flex h-full w-full justify-center">
                 <Text className="my-2 font-bold text-[20px] text-slate-700 text-center">Metahub</Text>
                 <Formik
-                    initialValues={{ email: '', password: '' }}
+                    initialValues={{ email: '', password: '', name: '' }}
                     validationSchema={validationSchema}
                     onSubmit={(values, { resetForm }) => {
                         handleRegister(values)
@@ -39,8 +56,20 @@ const Register = ({ navigation }) => {
                     {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
                         <View>
                             <TextInput
+                                name="name"
+                                className="bg-white border border-slate-700 p-3 mb-2 rounded text-slate-600"
+                                placeholder="Enter Your Email"
+                                onChangeText={handleChange('name')}
+                                onBlur={handleBlur('name')}
+                                value={values.name}
+                            />
+                            {touched.name && errors.name && (
+                                <Text className="text-red-500 mb-2 mt-0 text-[12px]">{errors.name}</Text>
+                            )}
+
+                            <TextInput
                                 name="email"
-                                className="bg-white border border-slate-700 p-3 rounded text-slate-600"
+                                className="bg-white border border-slate-700 p-3 mb-2 rounded text-slate-600"
                                 placeholder="Enter Your Email"
                                 onChangeText={handleChange('email')}
                                 onBlur={handleBlur('email')}
